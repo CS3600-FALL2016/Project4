@@ -40,6 +40,7 @@ class Perceptron(object):
             The output of the sigmoid function parametrized by 
             the value.
         """
+        return 1 / (1 + exp(-value))
         """YOUR CODE"""
       
     def sigmoidActivation(self, inActs):                                       
@@ -55,6 +56,8 @@ class Perceptron(object):
             The value of the sigmoid of the weighted input
         """
         """YOUR CODE"""
+        l = [1] + inActs
+        return self.sigmoid(self.getWeightedSum(l))
         
     def sigmoidDeriv(self, value):
         """
@@ -68,6 +71,7 @@ class Perceptron(object):
             parametrized by the value.
         """
         """YOUR CODE"""
+        return exp(value) / (pow((exp(value) + 1), 2))
         
     def sigmoidActivationDeriv(self, inActs):
         """
@@ -82,7 +86,8 @@ class Perceptron(object):
             The derivative of the sigmoid of the weighted input
         """
         """YOUR CODE"""
-    
+        return self.sigmoidDeriv(self.getWeightedSum([1] + inActs))
+
     def updateWeights(self, inActs, alpha, delta):
         """
         Updates the weights for this Perceptron given the input delta.
@@ -100,6 +105,14 @@ class Perceptron(object):
         """
         totalModification = 0
         """YOUR CODE"""
+        updWeights = []
+        i = 0
+        l = [1] + inActs
+        for w in self.weights:
+            updWeights.append(w + alpha * delta * l[i])
+            totalModification += abs(updWeights[i] - w)
+            i += 1
+        self.weights = updWeights
         return totalModification
             
     def setRandomWeights(self):
@@ -173,7 +186,19 @@ class NeuralNet(object):
             lists of the output values of all perceptrons in each layer.
         """
         """YOUR CODE"""
-    
+
+        returnList = []
+        returnList.append(inActs)
+        currentInput = inActs
+        for currLayer in self.layers:
+            pList = []
+            for perceptor in currLayer:
+                pList.append(perceptor.sigmoidActivation(currentInput))
+
+            currentInput = pList  # updating the currentInput List after each layer
+            returnList.append(pList)
+
+        return returnList
     def backPropLearning(self, examples, alpha):
         """
         Run a single iteration of backward propagation learning algorithm.
@@ -201,15 +226,15 @@ class NeuralNet(object):
             #keep track of deltas to use in weight change
             deltas = []
             #Neural net output list
-            allLayerOutput = """FILL IN - neural net output list computation"""
+            allLayerOutput = self.feedForward(example[0])
             lastLayerOutput = allLayerOutput[-1]
             #Empty output layer delta list
             outDelta = []
             #iterate through all output layer neurons
             for outputNum in xrange(len(example[1])):
-                gPrime = self.outputLayer[outputNum].sigmoidActivationDeriv("""FILL IN""")
-                error = """FILL IN - error for this neuron"""
-                delta = """FILL IN - delta for this neuron"""
+                gPrime = self.outputLayer[outputNum].sigmoidActivationDeriv(allLayerOutput[-2])
+                error = example[1][outputNum] - lastLayerOutput[outputNum]
+                delta = gPrime * error
                 averageError+=error*error/2
                 outDelta.append(delta)
             deltas.append(outDelta)
@@ -224,10 +249,12 @@ class NeuralNet(object):
                 hiddenDelta = []
                 #Iterate through all neurons in this layer
                 for neuronNum in xrange(len(layer)):
-                    gPrime = layer[neuronNum].sigmoidActivationDeriv("""FILL IN""")
-                    delta = """FILL IN - delta for this neuron
-                               Carefully look at the equation here,
-                                it is easy to do this by intuition incorrectly"""
+                    nextDeltaList = deltas[0]
+                    gPrime = layer[neuronNum].sigmoidActivationDeriv(allLayerOutput[layerNum])
+                    delta = 0
+                    for i, nextDelta in enumerate(nextDeltaList):
+                        delta += nextDelta * nextLayer[i].weights[neuronNum+1]
+                    delta *= gPrime
                     hiddenDelta.append(delta)
                 deltas = [hiddenDelta]+deltas
             """Get output of all layers"""
@@ -239,8 +266,6 @@ class NeuralNet(object):
             for numLayer in xrange(0,self.numLayers):
                 layer = self.layers[numLayer]
                 for numNeuron in xrange(len(layer)):
-                    weightMod = layer[numNeuron].updateWeights("""FILL IN""")
-                    averageWeightChange += weightMod
                     numWeights += layer[numNeuron].inSize
             #end for each example
         #calculate final output
