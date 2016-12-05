@@ -321,32 +321,51 @@ def buildNeuralNet(examples, alpha=0.1, weightChangeThreshold = 0.00008,hiddenLa
     iteration=0
     trainError=0
     weightMod=0
-    
+    trainError, weightMod = nnet.backPropLearning(examplesTrain, alpha)
+    iteration += 1
+    while (weightMod > weightChangeThreshold) & (iteration < maxItr):
+        trainError, weightMod = nnet.backPropLearning(examplesTrain, alpha)
+        iteration += 1
+
     """
     Iterate for as long as it takes to reach weight modification threshold
     """
-        #if iteration%10==0:
-        #    print '! on iteration %d; training error %f and weight change %f'%(iteration,trainError,weightMod)
-        #else :
-        #    print '.',
-        
-          
+
+    # if iteration%10==0:
+    #    print '! on iteration %d; training error %f and weight change %f'%(iteration,trainError,weightMod)
+    # else :
+    #    print '.',
+
+
     time = datetime.now().time()
     print 'Finished after %d iterations at time %s with training error %f and weight change %f'%(iteration,str(time),trainError,weightMod)
-                
+
     """
     Get the accuracy of your Neural Network on the test examples.
 	For each text example, you should first feedforward to get the NN outputs. Then, round the list of outputs from the output layer of the neural net.
 	If the entire rounded list from the NN matches with the known list from the test example, then add to testCorrect, else add to  testError.
-    """ 
-    
-    testError = 0
-    testCorrect = 0     
-    
-    testAccuracy=0#num correct/num total
-    
-    print 'Feed Forward Test correctly classified %d, incorrectly classified %d, test percent error  %f\n'%(testCorrect,testError,testAccuracy)
-    
-    """return something"""
+    """
 
+    feedData = []
+    for e in examplesTest:
+        data = nnet.feedForward(e[0])
+        feedData.append(data[len(data) - 1])
+    testError = 0
+    testCorrect = 0
+    for i in range(len(examplesTest)):
+        boolTurd = True
+        for j in range(len(examplesTest[i][1])):
+            if round(examplesTest[i][1][j]) != round(feedData[i][j]):
+                boolTurd = False
+        if boolTurd:
+            testCorrect += 1
+        else:
+            testError += 1
+
+    testAccuracy = float(testCorrect) / (testError + testCorrect)
+
+    print 'Feed Forward Test correctly classified %d, incorrectly classified %d, test percent error  %f\n'%(testCorrect,testError,testAccuracy)
+
+    """return something"""
+    return(nnet, testAccuracy)
 
